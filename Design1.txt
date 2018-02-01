@@ -7,7 +7,7 @@ CIS 520 - Programming Project #1
 >> Fill in the names and email addresses of your group members.
 
 Adam Herting <herting@k-state.edu>
-FirstName LastName <email@k-state.edu>
+William Yeager <williamy@k-state.edu>
 ...
 
 ---- PRELIMINARIES ----
