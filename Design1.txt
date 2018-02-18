@@ -65,7 +65,16 @@ William Yeager <williamy@k-state.edu>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+static struct list ready_array[PRI_MAX + 1] 
+// Array storing several lists of threads with priority as the index
+
 >> B2: Explain the data structure used to track priority donation.
+
+the data structure for tracking donations would be a linked list containing for 
+each donation the priority given and the lock associated with the donation.
+
+For nested donations, what lock a thread waiting on should be known.
+Each thread that is waiting on a lock will have a varable stating what lock it waiting on.
 
 
 ---- ALGORITHMS ----
@@ -73,23 +82,34 @@ William Yeager <williamy@k-state.edu>
 >> B3: How do you ensure that the highest priority thread waiting for
 >> a lock, semaphore, or condition variable wakes up first?
 
+Have a list of threads waiting for the lock sorted by highest priority
+
 >> B4: Describe the sequence of events when a call to lock_acquire()
 >> causes a priority donation.  How is nested donation handled?
 
+  When a thread has to wait on a lock, it look for who is holding the lock and donations it priority to that thread.
+  For nested donation, if a thread that received a donation is also waiting on a lock then that thread will say what lock it is waiting
+  on and the thread holding that next lock will also be given the priority donation.
+
 >> B5: Describe the sequence of events when lock_release() is called
 >> on a lock that a higher-priority thread is waiting for.
+When a thread release a lock it check its donation list and remove all donations associated with that lock.
 
 ---- SYNCHRONIZATION ----
 
 >> B6: Describe a potential race in thread_set_priority() and explain
 >> how your implementation avoids it.  Can you use a lock to avoid
 >> this race?
+Two thread are trying to inccrease their priorities and one get a higher priority before the other.
+
+Have a lock for set priority so only one thread can change it's prioity at a time.
+
 
 ---- RATIONALE ----
 
 >> B7: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
-
+It is design to easily managed priorties and donations
 
               ADVANCED SCHEDULER [EXTRA CREDIT]
               =================================
