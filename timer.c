@@ -29,6 +29,7 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
+static struct list sleeping;
 
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
@@ -37,6 +38,7 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
+	list_init(&sleeping);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -84,16 +86,39 @@ timer_elapsed (int64_t then)
   return timer_ticks () - then;
 }
 
+/* function for comparing wake times between threads */
+static bool thread_check(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED)
+{
+	struct thread *tone = list_entry(first, struct thread, time);
+	struct thread *ttwo = list_entry(second, struct thread, time);
+	int64_t a = tone -> wake;
+	int64_t b = ttwo -> wake;
+	if( a < b) return true;
+	else return false;
+}
+
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
 void
 timer_sleep (int64_t ticks) 
 {
-  int64_t start = timer_ticks ();
 
-  ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  if (ticks > 0)
+    { 
+	ASSERT (intr_get_level () == INTR_ON);
+	
+	struct thread *t = thread_current(); 
+	intr_disable();
+	int64_t start = timer_ticks ();
+	t->wake = 2 * start; 
+	list_insert_ordered(&sleeping, &t->time, thread_check, NULL);
+	intr_enable();
+
+	sema_down(&t->sem4);
+    }
+	
+  else return;
+
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -165,13 +190,21 @@ timer_print_stats (void)
 {
   printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
+
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+  struct thread *t;
+  while(!list_empty (&sleeping)){
+	t = list_entry(list_front(&sleeping), struct thread, time);
+	if (ticks < t->wake) 
+		break;
+	sema_up(&t->sem4);
+	list_pop_front (&sleeping);
+}
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
@@ -234,6 +267,8 @@ real_time_sleep (int64_t num, int32_t denom)
       real_time_delay (num, denom); 
     }
 }
+
+
 
 /* Busy-wait for approximately NUM/DENOM seconds. */
 static void
