@@ -19,7 +19,8 @@ William Yeager <williamy@k-state.edu>
 >> preparing your submission, other than the Pintos documentation,
 >> course text, lecture notes, and course staff.
 
-Consulted the TAs for instruction.
+-Before consulting the TAs I used this past design doc I found as a guide for the alarm clock   -w.y.
+ -https://github.com/ryantimwilson/Pintos-Project-1/blob/master/src/threads/DESIGNDOC
 
                  ALARM CLOCK
                  ===========
