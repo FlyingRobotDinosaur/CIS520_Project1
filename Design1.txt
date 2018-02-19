@@ -19,8 +19,7 @@ William Yeager <williamy@k-state.edu>
 >> preparing your submission, other than the Pintos documentation,
 >> course text, lecture notes, and course staff.
 
-Before consulting the TAs I used this past design doc I found as a guide for the alarm clock   -w.y.
-https://github.com/ryantimwilson/Pintos-Project-1/blob/master/src/threads/DESIGNDOC
+Consulted the TAs for instruction.
 
                  ALARM CLOCK
                  ===========
@@ -34,6 +33,7 @@ https://github.com/ryantimwilson/Pintos-Project-1/blob/master/src/threads/DESIGN
 struct list sleeping;  // in timer.c this is a list that holds sleeping threads.  It is ordered by wake time.
 int64_t wake; // new struct member of struct thread.  value holding the wake up time for each thread.
 struct semaphore sem4; // new struct member of struct thread.  semaphore for each thread, used so they can sleep or wake
+struct list_elem time; // list_insert_ordered() requires an elem to sort positions in list, this elem is sorting
 
 ---- ALGORITHMS ----
 
