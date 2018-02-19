@@ -152,7 +152,7 @@ thread_tick (void)
 
     //Check if current thread is of highest priority
   /* Enforce preemption. */
-  if (++thread_ticks >= TIME_SLICE)
+  if (++thread_ticks >= TIME_SLICE || thread_get_priority() < highestPriority())
     intr_yield_on_return ();
 }
 
