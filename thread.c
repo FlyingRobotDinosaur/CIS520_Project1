@@ -1,3 +1,4 @@
+
 #include "threads/thread.h"
 #include <debug.h>
 #include <stddef.h>
@@ -38,7 +39,7 @@ static struct thread *initial_thread;
 static struct lock tid_lock;
 
 /* Stack frame for kernel_thread(). */
-struct kernel_thread_frame
+struct kernel_thread_frame 
   {
     void *eip;                  /* Return address. */
     thread_func *function;      /* Function to call. */
@@ -71,6 +72,7 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+
 /*
   Searchs from highest priority to lowest priority the first nonempty priority list
   then that list's index
@@ -82,7 +84,6 @@ int highestPriority(void){
   }
   return i;
 }
-
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -98,11 +99,12 @@ int highestPriority(void){
    It is not safe to call thread_current() until this function
    finishes. */
 void
-thread_init (void)
+thread_init (void) 
 {
   ASSERT (intr_get_level () == INTR_OFF);
 
   lock_init (&tid_lock);
+
   list_init(&ready_list);
   for(int i=0; i<PRI_MAX+1; i++){
     list_init(&ready_array[i]);
@@ -149,6 +151,7 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
+
 
     //Check if current thread is of highest priority
   /* Enforce preemption. */
@@ -215,8 +218,6 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
-  //
-
   /* Add to run queue. */
   thread_unblock (t);
   return tid;
@@ -255,6 +256,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
+
   list_push_back (&(ready_array[t->priority]), &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
@@ -412,6 +414,7 @@ idle (void *idle_started_ UNUSED)
   idle_thread = thread_current ();
   sema_up (idle_started);
 
+
   for (;;)
     {
       /* Let someone else run. */
@@ -483,7 +486,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
-
+  sema_init(&t->sem4, 0);
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
@@ -538,6 +541,7 @@ void
 thread_schedule_tail (struct thread *prev)
 {
   struct thread *cur = running_thread ();
+
   ASSERT (intr_get_level () == INTR_OFF);
 
   /* Mark us as running. */
