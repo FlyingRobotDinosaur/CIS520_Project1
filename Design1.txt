@@ -77,7 +77,8 @@ and we want the threads to be able to sleep the full time.
 Initially I had the threads inserted into the list without trying to sort them, since the design doc states we 
 want to avoid as much time in the interrupt handler as possible, it was decided that sorting the list beforehand 
 would cut down the amount of looping needed to check the list.  I also tried to implement an extra function that could 
-wake threads that could be called when the threads needed to be woken, but this ultimately proved to be unnecessary as the extra code was making things more complicated when it could be resolved from within the timer interrupt call.
+wake threads that could be called when the threads needed to be woken, but this ultimately proved to be unnecessary as 
+the extra code was making things more complicated when it could be resolved from within the timer interrupt call.
 Overall it's simpler with less overhead.  
 
              PRIORITY SCHEDULING
