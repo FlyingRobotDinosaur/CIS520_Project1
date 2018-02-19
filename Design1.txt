@@ -19,6 +19,8 @@ William Yeager <williamy@k-state.edu>
 >> preparing your submission, other than the Pintos documentation,
 >> course text, lecture notes, and course staff.
 
+Before consulting the TAs I used this past design doc I found as a guide for the alarm clock   -w.y.
+https://github.com/ryantimwilson/Pintos-Project-1/blob/master/src/threads/DESIGNDOC
 
                  ALARM CLOCK
                  ===========
@@ -29,32 +31,54 @@ William Yeager <williamy@k-state.edu>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+struct list sleeping;  // in timer.c this is a list that holds sleeping threads.  It is ordered by wake time.
+int64_t wake; // new struct member of struct thread.  value holding the wake up time for each thread.
+struct semaphore sem4; // new struct member of struct thread.  semaphore for each thread, used so they can sleep or wake
 
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe what happens in a call to your timer_sleep(),
 >> including the effects of the timer interrupt handler.
 
+First timer_sleep() checks if ticks is valid, if it is, it takes the current thread and assigns it a wake up value,
+ this time it sleeps is approximately TICKS timer ticks, so the wake up time is when ticks has doubled in value. 
+ Then the thread is added to the list with other blocked threads.  The thread is blocked with a semaphore.  
+ When the timer interrupt handler is called, ticks is updated, and the sleeping list is checked.  
+ If the wake value is greater than the global ticks total, that thread is signaled to wake and removed from the list. 
+ 
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
 
+It is important to sort the list by wake times, so that the while loop doesn't have to check every single entry.  
+If it is sorted, once it finds a thread that is not ready to wake, it should know that all the others listed after 
+also are not ready to wake.
 
 ---- SYNCHRONIZATION ----
 
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
+The only part of the function that is critical is the part where the thread is added to the list. We want to make sure
+it is accessed only one at a time. Because the interrupts are disabled when the shared list is being accessed, it 
+won't be interfered with.  Also since the list is being sorted, each wake time is in the proper place in the list.
 
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
 
+We can avoid interference by disabling interrupts when we add to the list.  It is also (maybe) important to disable 
+interrupts before calculating the wake up time, because if there were an interrupt the ticks would still count up, 
+and we want the threads to be able to sleep the full time.
 
 ---- RATIONALE ----
 
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> other designs that you considered?
 
-
+Initially I had the threads inserted into the list without trying to sort them, since the design doc states we 
+want to avoid as much time in the interrupt handler as possible, it was decided that sorting the list beforehand 
+would cut down the amount of looping needed to check the list.  I also tried to implement an extra function that could 
+wake threads that could be called when the threads needed to be woken, but this ultimately proved to be unnecessary as the extra code was making things more complicated when it could be resolved from within the timer interrupt call.
+Overall it's simpler with less overhead.  
 
              PRIORITY SCHEDULING
              ===================
