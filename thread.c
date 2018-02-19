@@ -23,7 +23,7 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
-static struct list ready_array[PRI_MAX];
+static struct list ready_array[PRI_MAX+1];
 /* List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
@@ -76,7 +76,7 @@ static tid_t allocate_tid (void);
   then that list's index
 */
 int highestPriority(void){
-  int i = PRI_MAX;
+  int i = PRI_MAX+1;
   while(i > PRI_MIN && list_empty(&ready_array[i])){
     i--;
   }
@@ -104,7 +104,7 @@ thread_init (void)
 
   lock_init (&tid_lock);
   list_init(&ready_list);
-  for(int i=0; i<PRI_MAX; i++){
+  for(int i=0; i<PRI_MAX+1; i++){
     list_init(&ready_array[i]);
   }
   list_init (&all_list);
@@ -152,7 +152,7 @@ thread_tick (void)
 
     //Check if current thread is of highest priority
   /* Enforce preemption. */
-  if (++thread_ticks >= TIME_SLICE /*|| t->priority < highestPriority()*/)
+  if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
 }
 
@@ -215,6 +215,8 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
+  //
+
   /* Add to run queue. */
   thread_unblock (t);
   return tid;
@@ -253,7 +255,7 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_array[thread_get_priority()], &t->elem);
+  list_push_back (&(ready_array[t->priority]), &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -272,7 +274,6 @@ struct thread *
 thread_current (void)
 {
   struct thread *t = running_thread ();
-
   /* Make sure T is really a thread.
      If either of these assertions fire, then your thread may
      have overflowed its stack.  Each thread has less than 4 kB
@@ -324,7 +325,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread)
-    list_push_back (&ready_array[thread_get_priority()], &cur->elem);
+    list_push_back (&(ready_array[cur->priority]), &cur->elem);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -352,6 +353,9 @@ void
 thread_set_priority (int new_priority)
 {
   thread_current ()->priority = new_priority;
+  if(new_priority < highestPriority()){
+	  thread_yield();
+  }
 }
 
 /* Returns the current thread's priority. */
@@ -506,10 +510,11 @@ alloc_frame (struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run (void)
 {
-  if (list_empty (&ready_array[highestPriority()]))
+  int high = highestPriority();
+  if (list_empty (&(ready_array[high])))
     return idle_thread;
   else
-    return list_entry (list_pop_front (&ready_array[highestPriority()]), struct thread, elem);
+    return list_entry (list_pop_front (&(ready_array[high])), struct thread, elem);
 }
 
 
@@ -533,7 +538,6 @@ void
 thread_schedule_tail (struct thread *prev)
 {
   struct thread *cur = running_thread ();
-
   ASSERT (intr_get_level () == INTR_OFF);
 
   /* Mark us as running. */
